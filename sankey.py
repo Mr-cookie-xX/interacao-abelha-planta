@@ -4,6 +4,8 @@ from functools import cached_property
 from typing_extensions import List, Dict, Any, Self
 
 class SankeyGraph:
+    """Criação de gráficos Sankey para modelos de duas colunas"""
+
     def __init__(self, df: pd.DataFrame):
         self._df = df
 
@@ -25,9 +27,12 @@ class SankeyGraph:
         return {
             "pad" : 15,
             "thickness" : 20,
-            "color" : ["red","pink", "blue", "blue", "green", "yellow"],
+            "color" : [
+                *self.df.shape[0]*["#E78413"],
+                *self.df.shape[1]*["#B913D2"],
+            ],
             "line" : {
-                "color" : "pink",
+                "color" : "#000000",
                 "width" : 0.5,
             },
             "label" : self.labels,
@@ -46,9 +51,10 @@ class SankeyGraph:
                 values.append(self.df.loc[index][col])
 
         link = {
-            'source' : source,
-            'target' : target,
-            'value'  : values,
+            'source': source,
+            'target': target,
+            'value' : values,
+            # 'color' : "#000000",
         }
         
         return link
