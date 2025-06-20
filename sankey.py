@@ -63,8 +63,6 @@ class SankeyGraph:
         fig = go.Figure(data=[go.Sankey(node=self.node, link=self.link)])
         kwargs = {
             "title_text": "Interações: Abelhas x Flores",
-            # "height": 1280,
-            # "width": 720,
             "font": {
                 "color": "#000000",
                 "family": "Comic Sans",
@@ -85,7 +83,7 @@ class SankeyGraph:
 
     def write_image(self, file: str, **kwargs) -> None:
         fig = self.graph(**kwargs)
-        fig.write_image(file=file, scale=10, height=1280, width=720)
+        fig.write_image(file=file, scale=2, height=800, width=800)
 
     def write_html(self, file: str, **kwargs) -> None:
         fig = self.graph(**kwargs)
