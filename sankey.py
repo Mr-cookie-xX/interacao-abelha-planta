@@ -25,7 +25,7 @@ class SankeyGraph:
     @cached_property
     def node(self) -> Dict[str, Any]:
         return {
-            "pad" : 15,
+            "pad" : 5,
             "thickness" : 20,
             "color" : [
                 *self.df.shape[0]*["#E78413"],
@@ -62,12 +62,30 @@ class SankeyGraph:
     def graph(self, **kwargs) -> go.Figure:
         fig = go.Figure(data=[go.Sankey(node=self.node, link=self.link)])
         kwargs = {
-            "title_text": "Interacao das abelhas com as flores",
-            "font_size": 10,
+            "title_text": "Interações: Abelhas x Flores",
+            # "height": 1280,
+            # "width": 720,
+            "font": {
+                "color": "#000000",
+                "family": "Comic Sans",
+                "size": 10,
+                "style": "italic",
+                "weight": 500,
+            },
+            "margin": {
+                "l": 10,
+                "r": 10,
+                "t": 30,
+                "b": 20,
+            },
             **kwargs,
         }
         fig.update_layout(**kwargs)
         return fig
+
+    def write_image(self, file: str, **kwargs) -> None:
+        fig = self.graph(**kwargs)
+        fig.write_image(file=file, scale=10, height=1280, width=720)
 
     def write_html(self, file: str, **kwargs) -> None:
         fig = self.graph(**kwargs)
