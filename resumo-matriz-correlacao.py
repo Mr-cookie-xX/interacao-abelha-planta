@@ -28,14 +28,17 @@ df_count = df\
 
 size = 0
 
+i = 0
+
 for name, row in df_count.iterrows():
     size += row['count']
+    i += 1
     if size >= df_count.sum(axis=0).to_list()[0] / 2:
         break
 
 dfs = [
-    df[df['flor'].isin(df_count.loc[:name].index.to_list())],
-    df[df['flor'].isin(df_count.loc[name:].index.to_list())],
+    df[df['flor'].isin(df_count.iloc[:i].index.to_list())],
+    df[df['flor'].isin(df_count.iloc[i:].index.to_list())],
 ]
 
 for i in range(len(dfs)):
