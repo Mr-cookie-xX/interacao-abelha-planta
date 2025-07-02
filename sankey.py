@@ -28,8 +28,8 @@ class SankeyGraph:
             "pad" : 5,
             "thickness" : 20,
             "color" : [
-                *self.df.shape[0]*["#E78413"],
-                *self.df.shape[1]*["#B913D2"],
+                * (self.df.shape[0])*["#4CE713"],
+                * (self.df.shape[1])*["#E78413"],
             ],
             "line" : {
                 "color" : "#000000",
@@ -62,7 +62,7 @@ class SankeyGraph:
     def graph(self, **kwargs) -> go.Figure:
         fig = go.Figure(data=[go.Sankey(node=self.node, link=self.link)])
         kwargs = {
-            "title_text": "Interações: Abelhas x Flores",
+            "title_text": "Interações: Flores x Abelhas",
             "font": {
                 "color": "#000000",
                 "family": "Comic Sans",
