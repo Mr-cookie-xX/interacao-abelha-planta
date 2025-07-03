@@ -24,12 +24,32 @@ class SankeyGraph:
 
     @cached_property
     def node(self) -> Dict[str, Any]:
+        plantas = [
+            "Croton triqueter",
+            "Andira anthelmia",
+            "Sphagneticola trilobata",
+            "Piper aduncum",
+        ]
+        abelhas = [
+            "Plebeia droryana",
+            "Trigona sp.2",
+            "Apis mellifera",
+            "Tetragonisca angustula",
+        ]
+        cores_plantas = [
+            "#41C411" if name in plantas else "#79E353"
+            for name in self.df.index.to_list()
+        ]
+        cores_abelhas = [
+            "#DB7500" if name in abelhas else "#D89B55"
+            for name in self.df.columns.to_list()
+        ]
         return {
             "pad" : 5,
             "thickness" : 20,
             "color" : [
-                * (self.df.shape[0])*["#4CE713"],
-                * (self.df.shape[1])*["#E78413"],
+                *cores_plantas,
+                *cores_abelhas,
             ],
             "line" : {
                 "color" : "#000000",
