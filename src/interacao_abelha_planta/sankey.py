@@ -3,6 +3,7 @@ import plotly.graph_objects as go
 from functools import cached_property
 from typing_extensions import List, Dict, Any, Self
 
+
 class SankeyGraph:
     """Criação de gráficos Sankey para modelos de duas colunas"""
 
@@ -11,7 +12,12 @@ class SankeyGraph:
 
     @classmethod
     def from_file(cls, file: str, sep: str = "|", limit: int | None = None) -> Self:
-        df = pd.read_csv(filepath_or_buffer=file, sep=sep, header=0, index_col=0)
+        df = pd.read_csv(
+            filepath_or_buffer=file,
+            sep=sep,
+            header=0,
+            index_col=0,
+        )
         return cls(df=df.head(limit)) if limit else cls(df=df)
 
     @property
@@ -24,38 +30,28 @@ class SankeyGraph:
 
     @cached_property
     def node(self) -> Dict[str, Any]:
-        plantas = [
-            "Croton triqueter",
-            "Andira anthelmia",
-            "Sphagneticola trilobata",
-            "Piper aduncum",
-        ]
-        abelhas = [
-            "Plebeia droryana",
-            "Trigona sp.2",
-            "Apis mellifera",
-            "Tetragonisca angustula",
-        ]
+        plantas = []
+        abelhas = []
         cores_plantas = [
             "#41C411" if name in plantas else "#79E353"
             for name in self.df.index.to_list()
         ]
         cores_abelhas = [
-            "#DB7500" if name in abelhas else "#D89B55"
+            "#D89B55" if name in abelhas else "#DB7500"
             for name in self.df.columns.to_list()
         ]
         return {
-            "pad" : 5,
-            "thickness" : 20,
-            "color" : [
+            "pad": 5,
+            "thickness": 20,
+            "color": [
                 *cores_plantas,
                 *cores_abelhas,
             ],
-            "line" : {
-                "color" : "#000000",
-                "width" : 0.5,
+            "line": {
+                "color": "#000000",
+                "width": 0.5,
             },
-            "label" : self.labels,
+            "label": self.labels,
         }
 
     @cached_property
@@ -71,12 +67,12 @@ class SankeyGraph:
                 values.append(self.df.loc[index][col])
 
         link = {
-            'source': source,
-            'target': target,
-            'value' : values,
+            "source": source,
+            "target": target,
+            "value": values,
             # 'color' : "#000000",
         }
-        
+
         return link
 
     def graph(self, **kwargs) -> go.Figure:
@@ -103,7 +99,7 @@ class SankeyGraph:
 
     def write_image(self, file: str, **kwargs) -> None:
         fig = self.graph(**kwargs)
-        fig.write_image(file=file, scale=2, height=800, width=800)
+        fig.write_image(file=file, scale=2, width=600, height=800)
 
     def write_html(self, file: str, **kwargs) -> None:
         fig = self.graph(**kwargs)
