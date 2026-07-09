@@ -14,7 +14,7 @@ class ImageGenerator:
             "Spp. de abelha": "abelha",
             "Spp. da flor": "flor",
         }
-        df_renamed = df.rename(columns=rename)[[*rename.values()]]
+        df_renamed = df.rename(columns=rename, errors="raise")[[*rename.values()]]
         df_renamed["abelha"] = df_renamed["abelha"].str.capitalize()
         df_renamed["flor"] = df_renamed["flor"].str.capitalize()
         self._df = df_renamed.dropna().drop_duplicates().reset_index(drop=True)
