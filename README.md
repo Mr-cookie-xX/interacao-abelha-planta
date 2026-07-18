@@ -2,18 +2,14 @@
 
 ## Instruções
 
-### Help
+Para ver detalhes do comando:
 
 ```bash
-interacao-abelha-planta --help
-
-interacao-abelha-planta generate-images-from-datafile --help
+interacao-abelha-planta generate-images --help
 ```
 
-### Resumo
-
-Para gerar as imagens, execute o comando abaixo:
+Para gerar as imagens:
 
 ```bash
-interacao-abelha-planta generate-images-from-datafile --filename
+interacao-abelha-planta generate-images --filename "<caminho do arquivo>" --pages <numero de paginas> --group-by [abelha/flor] 
 ```
