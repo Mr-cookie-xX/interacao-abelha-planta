@@ -1,7 +1,7 @@
 import pandas as pd
 from pathlib import Path
 from functools import cached_property
-from typing import List, Literal, Self
+from typing import List, Literal, Self, Iterator, Tuple
 
 
 class InteractionDataProcessor:
@@ -53,7 +53,7 @@ class InteractionDataProcessor:
             .to_frame()
         )
 
-    def split_data_into_pages(self, pages: int) -> List[pd.DataFrame]:
+    def _split_data_into_pages(self, pages: int) -> List[pd.DataFrame]:
         if pages <= 1:
             return [self.df]
 
@@ -79,7 +79,7 @@ class InteractionDataProcessor:
 
         return [self.df[self.df[self.group_by].isin(keys)] for keys in page_keys]
 
-    def build_matrix(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _build_matrix_for_page(self, df: pd.DataFrame) -> pd.DataFrame:
         if self.group_by == "flor":
             rows = df["flor"].unique()
             cols = df["abelha"].unique()
@@ -96,11 +96,20 @@ class InteractionDataProcessor:
 
         return matrix[matrix.sum().sort_values(ascending=False).index]
 
-    def export(self, to_folder: Path, pages: int = 1) -> List[Path]:
+    def build_matrix(self) -> pd.DataFrame:
+        return self._build_matrix_for_page(df=self.df)
 
+    def paginate(self, pages: int = 1) -> Iterator[Tuple[int, pd.DataFrame]]:
+
+        dfs = self._split_data_into_pages(pages=pages)
+
+        for i, df in enumerate(dfs):
+            yield i, self._build_matrix_for_page(df=df)
+
+    def export_csvs(self, to_folder: Path) -> None:
         self.df.to_csv(
             path_or_buf=to_folder / "interacoes-unicas.csv",
-            index=False,
+            index=True,
             header=True,
             sep=",",
         )
@@ -111,17 +120,3 @@ class InteractionDataProcessor:
             header=True,
             sep=",",
         )
-
-        dfs = self.split_data_into_pages(pages)
-
-        matrix_files = []
-
-        for i, df_page in enumerate(dfs):
-            matrix = self.build_matrix(df_page)
-
-            file = to_folder / f"matriz-interacoes-{i}.csv"
-            matrix.to_csv(file, sep="|", header=True, index=True)
-
-            matrix_files.append(file)
-
-        return matrix_files

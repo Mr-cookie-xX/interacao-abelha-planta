@@ -100,43 +100,29 @@ class SankeyGraph:
 
     def __init__(
         self,
-        df: pd.DataFrame,
         theme: Optional[SankeyTheme] = None,
         renderer: Optional[SankeyRenderer] = None,
     ):
-        self.df = df
         self.theme = theme or SankeyTheme()
         self.renderer = renderer or SankeyRenderer()
 
-    @classmethod
-    def from_file(cls, file: str, sep: str = "|", limit: Optional[int] = None) -> Self:
-        df = pd.read_csv(
-            file,
-            sep=sep,
-            header=0,
-            index_col=0,
-        )
-        if limit:
-            df = df.head(limit)
-        return cls(df=df)
+    def build_data(self, df: pd.DataFrame) -> SankeyData:
+        return SankeyDataBuilder(df=df).build(self.theme)
 
-    def build_data(self) -> SankeyData:
-        return SankeyDataBuilder(self.df).build(self.theme)
-
-    def figure(self, **kwargs) -> go.Figure:
-        data = self.build_data()
+    def figure(self, df: pd.DataFrame, **kwargs) -> go.Figure:
+        data = self.build_data(df=df)
         return self.renderer.render(data, self.theme, **kwargs)
 
-    def to_html(self, **kwargs) -> str:
-        return self.figure(**kwargs).to_html()
+    def to_html(self, df: pd.DataFrame, **kwargs) -> str:
+        return self.figure(df=df, **kwargs).to_html()
 
-    def to_image(self, **kwargs):
-        return self.figure(**kwargs).to_image(format="png")
+    def to_image(self, df: pd.DataFrame, **kwargs):
+        return self.figure(df=df, **kwargs).to_image(format="png")
 
-    def write_image(self, file: str, **kwargs) -> None:
-        fig = self.figure(**kwargs)
+    def write_image(self, df: pd.DataFrame, file: str, **kwargs) -> None:
+        fig = self.figure(df=df, **kwargs)
         fig.write_image(file=file, scale=2, width=600, height=800)
 
-    def write_html(self, file: str, **kwargs) -> None:
-        fig = self.figure(**kwargs)
+    def write_html(self, df: pd.DataFrame, file: str, **kwargs) -> None:
+        fig = self.figure(df=df, **kwargs)
         fig.write_html(file)
