@@ -1,6 +1,10 @@
 import click
+from pathlib import Path
 from datetime import date
-from .images import ImageGenerator
+from shutil import rmtree
+
+from .sankey import SankeyGraph
+from .process import InteractionDataProcessor
 
 
 @click.group(
@@ -17,6 +21,11 @@ def cli() -> None: ...
     help="Nome do arquivo de dados original. Deve conter pelo menos as colunas `Spp. de abelha` e `Spp. da flor`",
 )
 @click.option(
+    "--group-by",
+    default="flor",
+    help="Indica qual será a relação de agrupamento para considerar o balanceamento das páginas.",
+)
+@click.option(
     "--pages",
     default=1,
     help="Número de páginas nas quais os dados serão divididos (agrupando pela quantidade de interações únicas). Opcional. Por padrão, os dados são salvos em uma única página.",
@@ -28,14 +37,28 @@ def cli() -> None: ...
 )
 def generate_images_from_datafile(
     filename: str,
+    group_by: str = "flor",
     pages: int = 1,
     to_folder: str | None = None,
 ) -> None:
-    to_folder = (
-        to_folder if to_folder else f'images/{date.today().strftime("%Y-%m-%d")}'
+    target = to_folder if to_folder else f'images/{date.today().strftime("%Y-%m-%d")}'
+
+    target = Path(target)
+
+    rmtree(target, ignore_errors=True)
+
+    target.mkdir(exist_ok=True, parents=True)
+
+    processor = InteractionDataProcessor.from_datafile(
+        filename=filename, group_by=group_by
     )
-    generator = ImageGenerator.from_datafile(filename=filename)
-    generator.generate(to_folder=to_folder, pages=pages)
+
+    files = processor.export(to_folder=target, pages=pages)
+
+    for file in files:
+        graph = SankeyGraph.from_file(file=file, sep="|")
+        graph.write_html(file=file.with_suffix(".html"))
+        graph.write_image(file=file.with_suffix(".png"))
 
 
 if __name__ == "__main__":

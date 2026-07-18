@@ -1,106 +1,142 @@
 import pandas as pd
+from dataclasses import dataclass
 import plotly.graph_objects as go
-from functools import cached_property
-from typing_extensions import List, Dict, Any, Self
+from typing import List, Optional, Self
 
 
-class SankeyGraph:
-    """Criação de gráficos Sankey para modelos de duas colunas"""
+@dataclass
+class SankeyData:
+    labels: List[str]
+    node_colors: List[str]
+    source: List[int]
+    target: List[int]
+    values: List[int]
+
+
+@dataclass
+class SankeyTheme:
+    title: str = "Interações: Flores x Abelhas"
+    color_left: str = "#79E353"
+    color_right: str = "#DB7500"
+    line_color: str = "#000000"
+    font_family: str = "Comic Sans"
+    font_color: str = "#000000"
+    font_size: int = 10
+
+
+class SankeyDataBuilder:
+    """
+    Converts a matrix (flowers x bees or vice‑versa)
+    into Sankey node/link structures.
+    """
 
     def __init__(self, df: pd.DataFrame):
-        self._df = df
+        self.df = df
 
-    @classmethod
-    def from_file(cls, file: str, sep: str = "|", limit: int | None = None) -> Self:
-        df = pd.read_csv(
-            filepath_or_buffer=file,
-            sep=sep,
-            header=0,
-            index_col=0,
-        )
-        return cls(df=df.head(limit)) if limit else cls(df=df)
+    def build(self, theme: SankeyTheme) -> SankeyData:
+        labels = self.df.index.to_list() + self.df.columns.to_list()
 
-    @property
-    def df(self) -> pd.DataFrame:
-        return self._df
-
-    @cached_property
-    def labels(self) -> List[str]:
-        return self.df.index.to_list() + self.df.columns.to_list()
-
-    @cached_property
-    def node(self) -> Dict[str, Any]:
-        plantas = []
-        abelhas = []
-        cores_plantas = [
-            "#41C411" if name in plantas else "#79E353"
-            for name in self.df.index.to_list()
+        node_colors = [theme.color_left for _ in self.df.index] + [
+            theme.color_right for _ in self.df.columns
         ]
-        cores_abelhas = [
-            "#D89B55" if name in abelhas else "#DB7500"
-            for name in self.df.columns.to_list()
-        ]
-        return {
-            "pad": 5,
-            "thickness": 20,
-            "color": [
-                *cores_plantas,
-                *cores_abelhas,
-            ],
-            "line": {
-                "color": "#000000",
-                "width": 0.5,
-            },
-            "label": self.labels,
-        }
 
-    @cached_property
-    def link(self) -> Dict[str, List[str] | List[int]]:
         source = []
         target = []
         values = []
 
-        for index in self.df.index:
-            for col in self.df.columns:
-                source.append(self.labels.index(index))
-                target.append(self.labels.index(col))
-                values.append(self.df.loc[index][col])
+        for i, row in enumerate(self.df.index):
+            for j, col in enumerate(self.df.columns):
+                source.append(i)
+                target.append(len(self.df.index) + j)
+                values.append(int(self.df.loc[row, col]))
+
+        return SankeyData(
+            labels=labels,
+            node_colors=node_colors,
+            source=source,
+            target=target,
+            values=values,
+        )
+
+
+class SankeyRenderer:
+    """
+    Responsible only for rendering SankeyData using Plotly.
+    """
+
+    def render(self, data: SankeyData, theme: SankeyTheme, **kwargs) -> go.Figure:
+        node = {
+            "pad": 5,
+            "thickness": 20,
+            "color": data.node_colors,
+            "line": {"color": theme.line_color, "width": 0.5},
+            "label": data.labels,
+        }
 
         link = {
-            "source": source,
-            "target": target,
-            "value": values,
-            # 'color' : "#000000",
+            "source": data.source,
+            "target": data.target,
+            "value": data.values,
         }
 
-        return link
+        fig = go.Figure(data=[go.Sankey(node=node, link=link)])
 
-    def graph(self, **kwargs) -> go.Figure:
-        fig = go.Figure(data=[go.Sankey(node=self.node, link=self.link)])
-        kwargs = {
-            "title_text": "Interações: Flores x Abelhas",
+        layout = {
+            "title_text": theme.title,
             "font": {
-                "color": "#000000",
-                "family": "Comic Sans",
-                "size": 10,
-                "style": "italic",
-                "weight": 500,
+                "color": theme.font_color,
+                "family": theme.font_family,
+                "size": theme.font_size,
             },
-            "margin": {
-                "l": 10,
-                "r": 10,
-                "t": 30,
-                "b": 20,
-            },
+            "margin": {"l": 10, "r": 10, "t": 30, "b": 20},
             **kwargs,
         }
-        fig.update_layout(**kwargs)
+
+        fig.update_layout(**layout)
         return fig
 
+
+class SankeyGraph:
+
+    def __init__(
+        self,
+        df: pd.DataFrame,
+        theme: Optional[SankeyTheme] = None,
+        renderer: Optional[SankeyRenderer] = None,
+    ):
+        self.df = df
+        self.theme = theme or SankeyTheme()
+        self.renderer = renderer or SankeyRenderer()
+
+    @classmethod
+    def from_file(cls, file: str, sep: str = "|", limit: Optional[int] = None) -> Self:
+        df = pd.read_csv(
+            file,
+            sep=sep,
+            header=0,
+            index_col=0,
+        )
+        if limit:
+            df = df.head(limit)
+        return cls(df=df)
+
+    def build_data(self) -> SankeyData:
+        return SankeyDataBuilder(self.df).build(self.theme)
+
+    def figure(self, **kwargs) -> go.Figure:
+        data = self.build_data()
+        return self.renderer.render(data, self.theme, **kwargs)
+
+    def to_html(self, **kwargs) -> str:
+        return self.figure(**kwargs).to_html()
+
+    def to_image(self, **kwargs):
+        return self.figure(**kwargs).to_image(format="png")
+
     def write_image(self, file: str, **kwargs) -> None:
-        fig = self.graph(**kwargs)
+        fig = self.figure(**kwargs)
         fig.write_image(file=file, scale=2, width=600, height=800)
 
     def write_html(self, file: str, **kwargs) -> None:
-        fig = self.graph(**kwargs)
+        fig = self.figure(**kwargs)
         fig.write_html(file)
